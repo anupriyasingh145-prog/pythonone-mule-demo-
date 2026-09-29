@@ -9,8 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}   # becomes ghcr.io/<your-username>/<your-repo>
-
+  IMAGE_NAME: pythonone-mule-demo
 jobs:
 
   # ------------------------------------------------------------------
