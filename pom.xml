@@ -65,7 +65,7 @@
       <classifier>mule-plugin</classifier>
     </dependency>
     <dependency>
-      <groupId>org.mule.modules</groupId>
+      <groupId>org.mule.connectors</groupId>
       <artifactId>mule-sockets-connector</artifactId>
       <version>1.2.7</version>
       <classifier>mule-plugin</classifier>
