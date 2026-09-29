@@ -55,7 +55,7 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -64,7 +64,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/anupriyasingh145-prog/pythonone-mule-demo:latest
   # ------------------------------------------------------------------
   # Job 3: Deploy to Kubernetes (CD - part 2)
   # Requires a KUBE_CONFIG repo secret containing a base64-encoded kubeconfig
