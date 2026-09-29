@@ -43,9 +43,8 @@
         </executions>
         <configuration>
           <runtimeConfiguration implementation="org.mule.munit.plugin.maven.runtime.RuntimeConfiguration">
-    <discoverDeployableApps>true</discoverDeployableApps>
-    <version>${app.runtime}</version>
-</runtimeConfiguration>
+            <version>${app.runtime}</version>
+          </runtimeConfiguration>
           <coverage>
             <runCoverage>true</runCoverage>
             <formats>
