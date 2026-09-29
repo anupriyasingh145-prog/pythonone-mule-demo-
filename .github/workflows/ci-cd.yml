@@ -66,8 +66,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=sha,prefix=
             type=raw,value=latest
+            type=sha,format=short
 
       - name: Build and push image
         uses: docker/build-push-action@v5
@@ -76,7 +76,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
   # ------------------------------------------------------------------
   # Job 3: Deploy to Kubernetes (CD - part 2)
   # Requires a KUBE_CONFIG repo secret containing a base64-encoded kubeconfig
