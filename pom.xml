@@ -42,10 +42,10 @@
           </execution>
         </executions>
         <configuration>
-          <runtimeConfiguration>
-            <product>MULE_EE</product>
-            <version>${app.runtime}</version>
-          </runtimeConfiguration>
+          <runtimeConfiguration implementation="org.mule.munit.plugin.maven.runtime.RuntimeConfiguration">
+    <discoverDeployableApps>true</discoverDeployableApps>
+    <version>${app.runtime}</version>
+</runtimeConfiguration>
           <coverage>
             <runCoverage>true</runCoverage>
             <formats>
