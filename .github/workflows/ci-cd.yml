@@ -63,6 +63,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile.selfcontained   # <--- Tells Docker to use your self-contained config
           push: true
           tags: ghcr.io/anupriyasingh145-prog/pythonone-mule-demo:latest
   # ------------------------------------------------------------------
