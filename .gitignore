@@ -1,0 +1,8 @@
+target/
+.mule/
+*.log
+.DS_Store
+.idea/
+*.iml
+mule-runtime.zip
+munit-report/

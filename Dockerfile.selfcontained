@@ -1,0 +1,39 @@
+# Alternate build path: use this instead of Dockerfile if you don't have
+# access to MuleSoft's private Docker registry, but you DO have the Mule EE
+# Standalone runtime zip downloaded from your Anypoint Platform account.
+#
+# Usage:
+#   1. Download "Mule Enterprise Standalone Runtime" (e.g. mule-ee-distribution-standalone-4.6.0.zip)
+#      from https://anypoint.mulesoft.com  -> Runtime Manager / Software downloads
+#   2. Place it in this project root as: mule-runtime.zip
+#   3. docker build -f Dockerfile.selfcontained -t hello-mule-app .
+
+# ---- Stage 1: build the app JAR ----
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /src
+COPY pom.xml .
+COPY src ./src
+COPY mule-artifact.json .
+RUN mvn -B clean package -DskipMunitTests=false
+
+# ---- Stage 2: assemble runtime image from the licensed zip ----
+FROM eclipse-temurin:17-jre-jammy
+ARG MULE_HOME=/opt/mule
+
+RUN apt-get update && apt-get install -y unzip wget && rm -rf /var/lib/apt/lists/*
+
+COPY mule-runtime.zip /tmp/mule-runtime.zip
+RUN mkdir -p ${MULE_HOME} \
+    && unzip /tmp/mule-runtime.zip -d /opt \
+    && mv /opt/mule-enterprise-standalone-*/* ${MULE_HOME} \
+    && rm -rf /tmp/mule-runtime.zip /opt/mule-enterprise-standalone-*
+
+COPY --from=build /src/target/*.jar ${MULE_HOME}/apps/hello-mule-app.jar
+
+ENV http.port=8081
+EXPOSE 8081
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -qO- http://localhost:8081/health || exit 1
+
+ENTRYPOINT ["/opt/mule/bin/mule"]

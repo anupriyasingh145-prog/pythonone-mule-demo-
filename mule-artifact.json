@@ -1,0 +1,14 @@
+{
+  "minMuleVersion": "4.6.0",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": []
+    }
+  },
+  "configs": [
+    "hello-app.xml"
+  ]
+}

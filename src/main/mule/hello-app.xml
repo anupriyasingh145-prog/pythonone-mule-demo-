@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <!-- HTTP Listener config. Port is externalized via a property so it can be
+         overridden per-environment (local, Docker, Kubernetes) without touching this file. -->
+    <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" />
+    </http:listener-config>
+
+    <!-- Main flow: GET /api/hello -->
+    <flow name="hello-flow" doc:name="hello-flow">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/hello" doc:name="Listener /api/hello">
+            <http:response statusCode="200">
+                <http:headers><![CDATA[#[{'Content-Type': 'application/json'}]]]></http:headers>
+            </http:response>
+        </http:listener>
+        <logger level="INFO" doc:name="Log request" message="Received request on /api/hello" />
+        <ee:transform doc:name="Build hello response">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Hello from Mule, running in Kubernetes!",
+  app: "pythonone-mule-demo",
+  timestamp: now()
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+
+    <!-- Health check flow: used by Docker HEALTHCHECK and Kubernetes readiness/liveness probes -->
+    <flow name="health-flow" doc:name="health-flow">
+        <http:listener config-ref="HTTP_Listener_config" path="/health" doc:name="Listener /health">
+            <http:response statusCode="200">
+                <http:headers><![CDATA[#[{'Content-Type': 'application/json'}]]]></http:headers>
+            </http:response>
+        </http:listener>
+        <ee:transform doc:name="Build health response">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{ status: "UP" }]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+
+</mule>

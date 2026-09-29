@@ -1,0 +1,112 @@
+name: CI/CD - hello-mule-app
+
+# Trigger: run on every push to main, and on pull requests targeting main
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}   # becomes ghcr.io/<your-username>/<your-repo>
+
+jobs:
+
+  # ------------------------------------------------------------------
+  # Job 1: Build the Mule app and run MUnit tests (CI)
+  # ------------------------------------------------------------------
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Build and run MUnit tests
+        run: mvn -B clean package -DskipMunitTests=false
+
+      - name: Upload built artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mule-app-jar
+          path: target/*.jar
+
+  # ------------------------------------------------------------------
+  # Job 2: Build Docker image and push to GitHub Container Registry (CD - part 1)
+  # Only runs on pushes to main (not on pull requests)
+  # ------------------------------------------------------------------
+  docker-build-push:
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata (tags)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # ------------------------------------------------------------------
+  # Job 3: Deploy to Kubernetes (CD - part 2)
+  # Requires a KUBE_CONFIG repo secret containing a base64-encoded kubeconfig
+  # with access to your cluster. Comment this job out until that's set up.
+  # ------------------------------------------------------------------
+  deploy-to-kubernetes:
+    needs: docker-build-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
+
+      - name: Apply manifests (first-time setup)
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Roll out the new image
+        run: |
+          kubectl set image deployment/hello-mule-app \
+            hello-mule-app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --record
+          kubectl rollout status deployment/hello-mule-app --timeout=120s

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+      xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+        http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+        http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+
+    <munit:config name="hello-app-test-suite.xml" />
+
+    <munit:test name="hello-flow-returns-message" description="hello-flow should return a JSON payload containing the expected message">
+        <munit:execution>
+            <flow-ref name="hello-flow" doc:name="hello-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that doc:name="Assert message field"
+                expression="#[payload.message]"
+                is="#[MunitTools::equalTo('Hello from Mule, running in Kubernetes!')]" />
+            <munit-tools:assert-that doc:name="Assert app field"
+                expression="#[payload.app]"
+                is="#[MunitTools::equalTo('pythonone-mule-demo')]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="health-flow-returns-up" description="health-flow should report status UP">
+        <munit:execution>
+            <flow-ref name="health-flow" doc:name="health-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that doc:name="Assert status UP"
+                expression="#[payload.status]"
+                is="#[MunitTools::equalTo('UP')]" />
+        </munit:validation>
+    </munit:test>
+
+</mule>
