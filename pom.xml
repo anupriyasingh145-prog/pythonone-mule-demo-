@@ -41,10 +41,8 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <runtimeConfiguration implementation="org.mule.munit.plugin.maven.runtime.RuntimeConfiguration">
-            <version>${app.runtime}</version>
-          </runtimeConfiguration>
+       <configuration>
+          <runtimeVersion>${app.runtime}</runtimeVersion>
           <coverage>
             <runCoverage>true</runCoverage>
             <formats>
