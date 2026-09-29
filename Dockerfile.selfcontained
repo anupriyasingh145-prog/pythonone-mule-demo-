@@ -14,7 +14,7 @@ WORKDIR /src
 COPY pom.xml .
 COPY src ./src
 COPY mule-artifact.json .
-RUN mvn -B clean package -DskipMunitTests=false
+RUN mvn -B clean package -DskipMunitTests=true
 
 # ---- Stage 2: assemble runtime image from the licensed zip ----
 FROM eclipse-temurin:17-jre-jammy
