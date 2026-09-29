@@ -52,6 +52,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download Mule Runtime
+        run: |
+          wget -O mule-runtime.zip https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/distributions/mule-standalone/4.6.0/mule-standalone-4.6.0.zip
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -63,7 +67,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.selfcontained   # <--- Tells Docker to use your self-contained config
+          file: ./Dockerfile.selfcontained
           push: true
           tags: ghcr.io/anupriyasingh145-prog/pythonone-mule-demo:latest
   # ------------------------------------------------------------------
