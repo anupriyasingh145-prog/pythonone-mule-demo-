@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: pythonone-mule-demo
+  IMAGE_NAME: ghcr.io/anupriyasingh145-prog/pythonone-mule-demo
 
 jobs:
   # Job 1: Build the Mule app and handle tests

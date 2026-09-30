@@ -22,7 +22,7 @@ spec:
       containers:
         - name: hello-mule-app
           # This is overwritten by the CI/CD pipeline (kubectl set image) on every deploy.
-          image: ghcr.io/YOUR_GITHUB_USERNAME/pythonone-mule-demo:latest
+          image: ghcr.io/anupriyasingh145-prog/pythonone-mule-demo:latest
           ports:
             - containerPort: 8081
           env:
@@ -30,13 +30,13 @@ spec:
               value: "8081"
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 8081
             initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 8081
             initialDelaySeconds: 40
             periodSeconds: 15
@@ -46,4 +46,4 @@ spec:
               memory: "512Mi"
             limits:
               cpu: "500m"
-              memory: "1Gi"
+              memory: "2Gi"
