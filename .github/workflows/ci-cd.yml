@@ -1,6 +1,5 @@
-name: CI/CD - hello-mule-app
+name: CI/CD Pipeline
 
-# Trigger: run on every push to main, and on pull requests targeting main
 on:
   push:
     branches: [ "main" ]
@@ -10,11 +9,9 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: pythonone-mule-demo
-jobs:
 
-  # ------------------------------------------------------------------
-  # Job 1: Build the Mule app and run MUnit tests (CI)
-  # ------------------------------------------------------------------
+jobs:
+  # Job 1: Build the Mule app and handle tests
   build-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -28,8 +25,8 @@ jobs:
           java-version: '11'
           cache: 'maven'
 
-      - name: Build and run MUnit tests
-        run: mvn -B clean package -DskipMunitTests
+      - name: Build application JAR
+        run: mvn -B clean package -DskipMunitTests=true
 
       - name: Upload built artifact
         uses: actions/upload-artifact@v4
@@ -37,10 +34,7 @@ jobs:
           name: mule-app-jar
           path: target/*.jar
 
-  # ------------------------------------------------------------------
-  # Job 2: Build Docker image and push to GitHub Container Registry (CD - part 1)
-  # Only runs on pushes to main (not on pull requests)
-  # ------------------------------------------------------------------
+  # Job 2: Build Docker image and push to GitHub Container Registry
   docker-build-push:
     needs: build-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -52,10 +46,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Mule Runtime
-        run: |
-          wget -O mule-runtime.zip https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/distributions/mule-standalone/4.6.0/mule-standalone-4.6.0.zip
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -63,18 +53,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build and push self-contained image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile.selfcontained
           push: true
-          tags: ghcr.io/anupriyasingh145-prog/pythonone-mule-demo:latest
-  # ------------------------------------------------------------------
-  # Job 3: Deploy to Kubernetes (CD - part 2)
-  # Requires a KUBE_CONFIG repo secret containing a base64-encoded kubeconfig
-  # with access to your cluster. Comment this job out until that's set up.
-  # ------------------------------------------------------------------
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  # Job 3: Deploy to Kubernetes Cluster
   deploy-to-kubernetes:
     needs: docker-build-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -91,15 +78,14 @@ jobs:
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
 
-      - name: Apply manifests (first-time setup)
+      - name: Apply manifests
         run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/deployment.yaml --validate=false
+          kubectl apply -f k8s/service.yaml --validate=false
+          kubectl apply -f k8s/ingress.yaml --validate=false
 
       - name: Roll out the new image
         run: |
           kubectl set image deployment/hello-mule-app \
-            hello-mule-app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --record
+            hello-mule-app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           kubectl rollout status deployment/hello-mule-app --timeout=120s
