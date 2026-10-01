@@ -62,30 +62,3 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   # Job 3: Deploy to Kubernetes Cluster
-  deploy-to-kubernetes:
-    needs: docker-build-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
-
-      - name: Apply manifests
-        run: |
-          kubectl apply -f k8s/deployment.yaml --validate=false
-          kubectl apply -f k8s/service.yaml --validate=false
-          kubectl apply -f k8s/ingress.yaml --validate=false
-
-      - name: Roll out the new image
-        run: |
-          kubectl set image deployment/hello-mule-app \
-            hello-mule-app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          kubectl rollout status deployment/hello-mule-app --timeout=120s

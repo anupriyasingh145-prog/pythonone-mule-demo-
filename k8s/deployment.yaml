@@ -29,21 +29,14 @@ spec:
             - name: http.port
               value: "8081"
           readinessProbe:
-            httpGet:
-              path: /
-              port: 8081
-            initialDelaySeconds: 20
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 8081
-            initialDelaySeconds: 40
-            periodSeconds: 15
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "512Mi"
-            limits:
-              cpu: "500m"
-              memory: "2Gi"
+  httpGet:
+    path: /      # Or your specific listener path
+    port: 8081
+  initialDelaySeconds: 60   # Give Mule 60 seconds to boot before checking
+  periodSeconds: 10
+livenessProbe:
+  httpGet:
+    path: /
+    port: 8081
+  initialDelaySeconds: 90   # Give it plenty of time before killing it
+  periodSeconds: 15
